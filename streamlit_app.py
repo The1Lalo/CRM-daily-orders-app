@@ -86,8 +86,9 @@ else:
 
     ch_label = st.sidebar.selectbox("انتخاب Churn Group", options=list(churn_map.keys()))
     ch = churn_map[ch_label]
-    size = st.sidebar.number_input("Churn Size", min_value=1, value=500, step=50)
-    churn_cr_pct = st.sidebar.slider("Churn Rate", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
+    # unified Seg Size label
+    size = st.sidebar.number_input("Seg Size", min_value=1, value=500, step=50)
+    churn_cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
     cr = churn_cr_pct / 100
 
     total = size * cr
