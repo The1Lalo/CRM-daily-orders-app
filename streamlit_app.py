@@ -53,38 +53,34 @@ churn_map = {
     "churn 91_startdate": 3,
 }
 
-# Page config and reduced title sizes
+# Page config and header sizes
 st.set_page_config(page_title="Daily Orders Calculator", layout="wide")
-# Use header instead of title for smaller font
 st.header("🎯 Daily Orders Calculator")
 
 # Main mode selection
-mode = st.sidebar.radio("Mode", ("NLI Segments", "Churn Groups", "Custom Mix"))
+mode = st.sidebar.radio("Mode", ("NLI Segments", "Churn Segments", "Custom Mix"))
 
 # NLI Segments
 if mode == "NLI Segments":
-    # Reduce heading size by using subheader
     st.subheader("📊 NLI Daily Orders")
     rem_nli = st.sidebar.radio("Reminder Day for NLI", ("Day 4", "Day 5"), key="rem_nli_main")
     shares_nli = nli_day4 if rem_nli == "Day 4" else nli_day5
     seg_label = st.sidebar.selectbox("انتخاب Segment", options=list(nli_map.keys()))
     seg = nli_map[seg_label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
-    # Label CR slider the same
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
     total = size * (cr_pct / 100)
     daily = (shares_nli[seg] / 100 * total).round(2)
-    # Smaller subheading for result
     st.markdown(f"#### {seg_label} ({rem_nli}) — Total Orders: {int(total)}")
     st.table(daily.to_frame("Daily Orders"))
     st.bar_chart(daily)
 
-# Churn Groups
-elif mode == "Churn Groups":
+# Churn Segments
+elif mode == "Churn Segments":
     st.subheader("📊 Churn Daily Orders")
     rem_ch = st.sidebar.radio("Reminder Day for Churn", ("Day 4", "Day 5"), key="rem_ch_main")
     shares_ch = churn_day4 if rem_ch == "Day 4" else churn_day5
-    ch_label = st.sidebar.selectbox("انتخاب Churn Group", options=list(churn_map.keys()))
+    ch_label = st.sidebar.selectbox("انتخاب Churn Segment", options=list(churn_map.keys()))
     ch = churn_map[ch_label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=500, step=50)
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
