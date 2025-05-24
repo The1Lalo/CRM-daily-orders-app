@@ -53,62 +53,61 @@ churn_map = {
     "churn 91_startdate": 3,
 }
 
-# Page config
+# Page config and reduced title sizes
 st.set_page_config(page_title="Daily Orders Calculator", layout="wide")
-st.title("🎯 Daily Orders Calculator")
+# Use header instead of title for smaller font
+st.header("🎯 Daily Orders Calculator")
 
 # Main mode selection
 mode = st.sidebar.radio("Mode", ("NLI Segments", "Churn Groups", "Custom Mix"))
 
 # NLI Segments
 if mode == "NLI Segments":
-    st.header("📊 NLI Daily Orders")
+    # Reduce heading size by using subheader
+    st.subheader("📊 NLI Daily Orders")
     rem_nli = st.sidebar.radio("Reminder Day for NLI", ("Day 4", "Day 5"), key="rem_nli_main")
     shares_nli = nli_day4 if rem_nli == "Day 4" else nli_day5
     seg_label = st.sidebar.selectbox("انتخاب Segment", options=list(nli_map.keys()))
     seg = nli_map[seg_label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
+    # Label CR slider the same
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
-    cr = cr_pct / 100
-    total = size * cr
+    total = size * (cr_pct / 100)
     daily = (shares_nli[seg] / 100 * total).round(2)
-    st.subheader(f"{seg_label} ({rem_nli}) — Total Orders: {int(total)}")
+    # Smaller subheading for result
+    st.markdown(f"#### {seg_label} ({rem_nli}) — Total Orders: {int(total)}")
     st.table(daily.to_frame("Daily Orders"))
     st.bar_chart(daily)
 
 # Churn Groups
 elif mode == "Churn Groups":
-    st.header("📊 Churn Daily Orders")
+    st.subheader("📊 Churn Daily Orders")
     rem_ch = st.sidebar.radio("Reminder Day for Churn", ("Day 4", "Day 5"), key="rem_ch_main")
     shares_ch = churn_day4 if rem_ch == "Day 4" else churn_day5
     ch_label = st.sidebar.selectbox("انتخاب Churn Group", options=list(churn_map.keys()))
     ch = churn_map[ch_label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=500, step=50)
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
-    cr = cr_pct / 100
-    total = size * cr
+    total = size * (cr_pct / 100)
     daily = (shares_ch[ch] / 100 * total).round(2)
-    st.subheader(f"{ch_label} ({rem_ch}) — Total Orders: {int(total)}")
+    st.markdown(f"#### {ch_label} ({rem_ch}) — Total Orders: {int(total)}")
     st.table(daily.to_frame("Daily Orders"))
     st.line_chart(daily)
 
 # Custom Mix
 else:
-    st.header("🧩 Custom Mix Daily Orders")
-    # Reminder settings for custom
+    st.subheader("🧩 Custom Mix Daily Orders")
     rem_nli_c = st.sidebar.radio("Reminder Day for NLI", ("Day 4", "Day 5"), key="rem_nli_c")
     rem_ch_c = st.sidebar.radio("Reminder Day for Churn", ("Day 4", "Day 5"), key="rem_ch_c")
     shares_nli_c = nli_day4 if rem_nli_c == "Day 4" else nli_day5
     shares_ch_c = churn_day4 if rem_ch_c == "Day 4" else churn_day5
 
-    # Number of entries
     count = st.sidebar.number_input("How many segment entries?", min_value=1, value=1, step=1)
     total_df = pd.Series(0.0, index=range(1, 8), name="Total Orders")
 
     for i in range(count):
         st.sidebar.markdown(f"--- Entry #{i+1} ---")
-        seg_type = st.sidebar.selectbox(
-            f"Type #{i+1}", ["NLI", "Churn"], key=f"type_{i}")
+        seg_type = st.sidebar.selectbox(f"Type #{i+1}", ["NLI", "Churn"], key=f"type_{i}")
         if seg_type == "NLI":
             options = list(nli_map.keys())
             shares = shares_nli_c
@@ -123,9 +122,8 @@ else:
         crp = st.sidebar.slider(f"CR #{i+1}", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%", key=f"cr_{i}")
         total_df += shares[idx] / 100 * (sz * crp / 100)
 
-    df_mix = total_df.round(2).to_frame()
-    st.subheader("Custom Mix — Total Daily Orders")
-    st.table(df_mix)
-    st.bar_chart(df_mix)
+    st.markdown("#### Custom Mix — Total Daily Orders")
+    st.table(total_df.round(2).to_frame())
+    st.bar_chart(total_df)
 
 st.caption("Built with ❤️ using Streamlit")
