@@ -26,6 +26,20 @@ st.set_page_config(
 )
 st.title("🎯 Daily Orders Calculator")
 
+# نگاشت برچسب‌ها به شاخص‌ها
+nli_map = {
+    "nli_1&2Ord 1-14": 1,
+    "nli_1&2 ord 15_28": 2,
+    "nli1&2ord 29_60": 3,
+    "nli1&2ord 61_90": 4,
+    "nli1&2ord 90_sd": 5,
+}
+churn_map = {
+    "churn 29_60": 1,
+    "churn 61_90": 2,
+    "churn 91_startdate": 3,
+}
+
 # انتخاب نوع داده
 mode = st.sidebar.radio(
     "کدام داده را می‌خواهید محاسبه کنید؟",
@@ -34,29 +48,30 @@ mode = st.sidebar.radio(
 
 if mode == "NLI Segments":
     st.header("📊 NLI Daily Orders")
-    seg = st.sidebar.selectbox("انتخاب Segment", options=nli_share.columns)
+    # نمایش منوی کشویی با برچسب
+    seg_label = st.sidebar.selectbox("انتخاب Segment", options=list(nli_map.keys()))
+    seg = nli_map[seg_label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
-    # نمایش CR به صورت درصد
     seg_cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
     cr = seg_cr_pct / 100
 
     total = size * cr
     daily = (nli_share[seg] / 100 * total).round(2).to_frame("Daily Orders")
-    st.subheader(f"Segment {seg} — Total Orders: {int(total)}")
+    st.subheader(f"{seg_label} — Total Orders: {int(total)}")
     st.table(daily)
     st.bar_chart(daily, use_container_width=True)
 
 else:
     st.header("📊 Churn Daily Orders")
-    ch = st.sidebar.selectbox("انتخاب Churn Group", options=churn_shares.columns)
+    ch_label = st.sidebar.selectbox("انتخاب Churn Group", options=list(churn_map.keys()))
+    ch = churn_map[ch_label]
     size = st.sidebar.number_input("Churn Size", min_value=1, value=500, step=50)
-    # نمایش CR به صورت درصد
     churn_cr_pct = st.sidebar.slider("Churn Rate", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
     cr = churn_cr_pct / 100
 
     total = size * cr
     daily = (churn_shares[ch] / 100 * total).round(2).to_frame("Daily Orders")
-    st.subheader(f"Churn Group {ch} — Total Orders: {int(total)}")
+    st.subheader(f"{ch_label} — Total Orders: {int(total)}")
     st.table(daily)
     st.line_chart(daily, use_container_width=True)
 
