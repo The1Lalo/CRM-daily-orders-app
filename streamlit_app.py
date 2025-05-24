@@ -12,10 +12,15 @@ nli_share = pd.DataFrame({
 }, index=[1,2,3,4,5,6,7])
 nli_share.index.name = 'Day'
 
+# --- داده‌های شیر برای Churn با Reminder روز 5 ارسال ظهر ---
 churn_shares = pd.DataFrame({
-    1: [20.284210, 16.364614, 12.778718, 18.437817, 12.517431, 11.110729, 8.506481],
-    2: [20.587293, 15.803377, 11.659074, 19.384095, 13.959417, 11.957428, 6.649317],
-    3: [20.250918, 11.259850, 10.081655, 19.287457, 14.421064, 14.493234, 10.205822],
+    1: [25.227468, 21.839262, 23.851160],
+    2: [15.982380, 15.252314, 12.611638],
+    3: [11.053946, 13.406240, 13.306372],
+    4: [ 8.574631, 13.175335, 10.842209],
+    5: [15.792417, 17.053160, 16.645724],
+    6: [15.887211, 12.539152, 15.215174],
+    7: [ 7.481948,  6.734537,  7.527723],
 }, index=[1,2,3,4,5,6,7])
 churn_shares.index.name = 'Day'
 
@@ -48,13 +53,11 @@ mode = st.sidebar.radio(
 
 if mode == "NLI Segments":
     st.header("📊 NLI Daily Orders")
-    # نمایش منوی کشویی با برچسب
     seg_label = st.sidebar.selectbox("انتخاب Segment", options=list(nli_map.keys()))
     seg = nli_map[seg_label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
     seg_cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
     cr = seg_cr_pct / 100
-
     total = size * cr
     daily = (nli_share[seg] / 100 * total).round(2).to_frame("Daily Orders")
     st.subheader(f"{seg_label} — Total Orders: {int(total)}")
@@ -68,7 +71,6 @@ else:
     size = st.sidebar.number_input("Churn Size", min_value=1, value=500, step=50)
     churn_cr_pct = st.sidebar.slider("Churn Rate", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
     cr = churn_cr_pct / 100
-
     total = size * cr
     daily = (churn_shares[ch] / 100 * total).round(2).to_frame("Daily Orders")
     st.subheader(f"{ch_label} — Total Orders: {int(total)}")
