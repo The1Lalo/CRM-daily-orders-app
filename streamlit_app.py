@@ -36,7 +36,9 @@ if mode == "NLI Segments":
     st.header("📊 NLI Daily Orders")
     seg = st.sidebar.selectbox("انتخاب Segment", options=nli_share.columns)
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
-    cr = st.sidebar.slider("Seg CR", min_value=0.0, max_value=1.0, value=0.05, step=0.005, format="%.3f")
+    # نمایش CR به صورت درصد
+    seg_cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
+    cr = seg_cr_pct / 100
 
     total = size * cr
     daily = (nli_share[seg] / 100 * total).round(2).to_frame("Daily Orders")
@@ -48,7 +50,9 @@ else:
     st.header("📊 Churn Daily Orders")
     ch = st.sidebar.selectbox("انتخاب Churn Group", options=churn_shares.columns)
     size = st.sidebar.number_input("Churn Size", min_value=1, value=500, step=50)
-    cr = st.sidebar.slider("Churn Rate", min_value=0.0, max_value=1.0, value=0.02, step=0.005, format="%.3f")
+    # نمایش CR به صورت درصد
+    churn_cr_pct = st.sidebar.slider("Churn Rate", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
+    cr = churn_cr_pct / 100
 
     total = size * cr
     daily = (churn_shares[ch] / 100 * total).round(2).to_frame("Daily Orders")
