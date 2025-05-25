@@ -51,26 +51,9 @@ suno_day5 = pd.DataFrame({
 suno_day5.index.name = 'Day'
 
 # Label maps
-nli_map = {
-    "nli_1&2Ord 1-14": 1,
-    "nli_1&2 ord 15_28": 2,
-    "nli1&2ord 29_60": 3,
-    "nli1&2ord 61_90": 4,
-    "nli1&2ord 90_sd": 5,
-}
-churn_map = {
-    "churn 29_60": 1,
-    "churn 61_90": 2,
-    "churn 91_startdate": 3,
-}
-suno_map = {
-    "suno 3-7": 1,
-    "suno 8-14": 2,
-    "suno 15-28": 3,
-    "suno 29-63": 4,
-    "suno 64-91": 5,
-    "suno 92-sd": 6,
-}
+nli_map = {"nli_1&2Ord 1-14": 1, "nli_1&2 ord 15_28": 2, "nli1&2ord 29_60": 3, "nli1&2ord 61_90": 4, "nli1&2ord 90_sd": 5}
+churn_map = {"churn 29_60": 1, "churn 61_90": 2, "churn 91_startdate": 3}
+suno_map = {"suno 3-7": 1, "suno 8-14": 2, "suno 15-28": 3, "suno 29-63": 4, "suno 64-91": 5, "suno 92-sd": 6}
 
 # Page config and header sizes
 st.set_page_config(page_title="Daily Orders Calculator", layout="wide")
@@ -88,10 +71,11 @@ if mode == "NLI Segments":
     idx = nli_map[label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
-    total = size * (cr_pct / 100)
-    daily = (shares[idx] / 100 * total).round(2)
-    st.markdown(f"#### {label} ({rem_nli}) — Total Orders: {int(total)}")
-    st.table(daily.to_frame("Daily Orders"))
+    daily = (shares[idx] / 100 * size * (cr_pct/100)).round(2).to_frame("Daily Orders")
+    st.markdown(f"#### {label} ({rem_nli}) — Total Orders: {int(daily['Daily Orders'].sum())}")
+    st.table(daily)
+    csv = daily.to_csv(index=True, index_label="Day").encode('utf-8')
+    st.download_button("Download table as CSV", data=csv, file_name=f"nli_{label.replace(' ','_')}_{rem_nli}.csv", mime="text/csv")
     st.bar_chart(daily)
 
 # Churn Segments
@@ -103,62 +87,27 @@ elif mode == "Churn Segments":
     idx = churn_map[label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=500, step=50)
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=2.0, step=0.5, format="%.1f%%")
-    total = size * (cr_pct / 100)
-    daily = (shares[idx] / 100 * total).round(2)
-    st.markdown(f"#### {label} ({rem_ch}) — Total Orders: {int(total)}")
-    st.table(daily.to_frame("Daily Orders"))
+    daily = (shares[idx] / 100 * size * (cr_pct/100)).round(2).to_frame("Daily Orders")
+    st.markdown(f"#### {label} ({rem_ch}) — Total Orders: {int(daily['Daily Orders'].sum())}")
+    st.table(daily)
+    csv = daily.to_csv(index=True, index_label="Day").encode('utf-8')
+    st.download_button("Download table as CSV", data=csv, file_name=f"churn_{label.replace(' ','_')}_{rem_ch}.csv", mime="text/csv")
     st.line_chart(daily)
 
 # SUNO Segments
 elif mode == "SUNO Segments":
     st.subheader("📊 SUNO Daily Orders")
-    # SUNO only Day 5 scenario
     label = st.sidebar.selectbox("انتخاب SUNO Segment", options=list(suno_map.keys()))
     idx = suno_map[label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
     cr_pct = st.sidebar.slider("Seg CR", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%")
-    total = size * (cr_pct / 100)
-    daily = (suno_day5[idx] / 100 * total).round(2)
-    st.markdown(f"#### {label} (Day 5) — Total Orders: {int(total)}")
-    st.table(daily.to_frame("Daily Orders"))
+    daily = (suno_day5[idx] / 100 * size * (cr_pct/100)).round(2).to_frame("Daily Orders")
+    st.markdown(f"#### {label} (Day 5) — Total Orders: {int(daily['Daily Orders'].sum())}")
+    st.table(daily)
+    csv = daily.to_csv(index=True, index_label="Day").encode('utf-8')
+    st.download_button("Download table as CSV", data=csv, file_name=f"suno_{label.replace(' ','_')}_Day5.csv", mime="text/csv")
     st.bar_chart(daily)
 
 # Custom Mix
 else:
-    st.subheader("🧩 Custom Mix Daily Orders")
-    # Reminder settings for custom
-    rem_nli_c = st.sidebar.radio("Reminder Day for NLI", ("Day 4", "Day 5"), key="rem_nli_c")
-    rem_ch_c = st.sidebar.radio("Reminder Day for Churn", ("Day 4", "Day 5"), key="rem_ch_c")
-    shares_nli_c = nli_day4 if rem_nli_c == "Day 4" else nli_day5
-    shares_ch_c = churn_day4 if rem_ch_c == "Day 4" else churn_day5
-    shares_suno_c = suno_day5  # SUNO only Day 5
-    # Number of entries
-    count = st.sidebar.number_input("How many segment entries?", min_value=1, value=1, step=1)
-    total_df = pd.Series(0.0, index=range(1, 8), name="Total Orders")
-
-    for i in range(count):
-        st.sidebar.markdown(f"--- Entry #{i+1} ---")
-        seg_type = st.sidebar.selectbox(f"Type #{i+1}", ["NLI", "Churn", "SUNO"], key=f"type_{i}")
-        if seg_type == "NLI":
-            options = list(nli_map.keys())
-            shares = shares_nli_c
-            mapping = nli_map
-        elif seg_type == "Churn":
-            options = list(churn_map.keys())
-            shares = shares_ch_c
-            mapping = churn_map
-        else:
-            options = list(suno_map.keys())
-            shares = shares_suno_c
-            mapping = suno_map
-        lbl = st.sidebar.selectbox(f"Select {seg_type} Segment #{i+1}", options=options, key=f"seg_{i}")
-        idx = mapping[lbl]
-        sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
-        crp = st.sidebar.slider(f"CR #{i+1}", min_value=0.0, max_value=100.0, value=5.0, step=0.5, format="%.1f%%", key=f"cr_{i}")
-        total_df += shares[idx] / 100 * (sz * crp / 100)
-
-    st.markdown("#### Custom Mix — Total Daily Orders")
-    st.table(total_df.round(2).to_frame())
-    st.bar_chart(total_df)
-
-st.caption("Built with ❤️ using Streamlit")
+    st.sub```
