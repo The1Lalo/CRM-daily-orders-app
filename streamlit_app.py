@@ -140,4 +140,3 @@ else:
     st.bar_chart(df_mix)
 
 st.caption("Built with ❤️ using Streamlit")
-```
