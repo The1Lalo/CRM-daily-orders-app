@@ -125,8 +125,8 @@ if mode == "NLI Segments":
         step=0.1,
         format="%.1f"
     )
-    daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(2).to_frame("Daily Orders")
-    total = int(daily["Daily Orders"].sum())
+    daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int).to_frame("Daily Orders")
+    total = daily["Daily Orders"].sum()
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
     st.markdown(f"#### {label} ({header}) — Total Orders: {total}")
     st.table(daily)
@@ -153,8 +153,8 @@ elif mode == "Churn Segments":
         step=0.1,
         format="%.1f"
     )
-    daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(2).to_frame("Daily Orders")
-    total = int(daily["Daily Orders"].sum())
+    daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int).to_frame("Daily Orders")
+    total = daily["Daily Orders"].sum()
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
     st.markdown(f"#### {label} ({header}) — Total Orders: {total}")
     st.table(daily)
@@ -174,8 +174,8 @@ elif mode == "SUNO Segments":
         step=0.1,
         format="%.1f"
     )
-    daily = (suno_day5[idx] / 100 * size * (cr_pct / 100)).round(2).to_frame("Daily Orders")
-    total = int(daily["Daily Orders"].sum())
+    daily = (suno_day5[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int).to_frame("Daily Orders")
+    total = daily["Daily Orders"].sum()
     st.markdown(f"#### {label} (Day 5) — Total Orders: {total}")
     st.table(daily)
     download_table(daily, f"suno_{label.replace(' ','_')}_Day5.csv")
@@ -192,7 +192,7 @@ else:
             send = st.sidebar.radio(f"Send Time #{i+1}", ["Noon","Night"], key=f"send_nli_{i}")
             if send == "Noon":
                 rem = st.sidebar.radio(f"Reminder Day #{i+1}", ["Day 4","Day 5"], key=f"rem_nli_{i}")
-                shares = nli_day4 if rem=="Day 4" else nli_day5
+                shares = nli_day4 if rem == "Day 4" else nli_day5
             else:
                 shares = nli_night_day4
             mapping = nli_map
@@ -200,7 +200,7 @@ else:
             send = st.sidebar.radio(f"Send Time #{i+1}", ["Noon","Night"], key=f"send_ch_{i}")
             if send == "Noon":
                 rem = st.sidebar.radio(f"Reminder Day #{i+1}", ["Day 4","Day 5"], key=f"rem_ch_{i}")
-                shares = churn_day4 if rem=="Day 4" else churn_day5
+                shares = churn_day4 if rem == "Day 4" else churn_day5
             else:
                 shares = churn_night_day4
             mapping = churn_map
@@ -219,7 +219,7 @@ else:
             key=f"cr_{i}"
         )
         total_df += shares[idx] / 100 * (sz * crp / 100)
-    df_mix = total_df.round(2).to_frame()
+    df_mix = total_df.round(0).astype(int).to_frame()
     st.markdown("#### Custom Mix — Total Daily Orders")
     st.table(df_mix)
     download_table(df_mix, "custom_mix_daily_orders.csv")
