@@ -183,7 +183,7 @@ elif mode == "SUNO Segments":
 # Custom Mix
 else:
     st.subheader("🧩 Custom Mix Daily Orders")
-    count = st.sidebar.number_input="How many segment entries?", min_value=1, value=1, step=1)
+    count = st.sidebar.number_input("How many segment entries?", min_value=1, value=1, step=1)
     total_df = pd.Series(0.0, index=range(1,8), name="Total Orders")
     for i in range(count):
         st.sidebar.markdown(f"--- Entry #{i+1} ---")
