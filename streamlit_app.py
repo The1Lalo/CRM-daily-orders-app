@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import pandas as pd
 
@@ -118,7 +117,14 @@ if mode == "NLI Segments":
     label = st.sidebar.selectbox("انتخاب Segment", options=list(nli_map.keys()))
     idx = nli_map[label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
-    cr_pct = st.sidebar.slider("Seg CR", 0.0, 100.0, 5.0, 0.5, format="%.1f%%")
+    cr_pct = st.sidebar.number_input(
+        "Seg CR (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=0.1,
+        format="%.1f"
+    )
     daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(2).to_frame("Daily Orders")
     total = int(daily["Daily Orders"].sum())
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
@@ -139,7 +145,14 @@ elif mode == "Churn Segments":
     label = st.sidebar.selectbox("انتخاب Churn Segment", options=list(churn_map.keys()))
     idx = churn_map[label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=500, step=50)
-    cr_pct = st.sidebar.slider("Seg CR", 0.0, 100.0, 2.0, 0.5, format="%.1f%%")
+    cr_pct = st.sidebar.number_input(
+        "Seg CR (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=2.0,
+        step=0.1,
+        format="%.1f"
+    )
     daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(2).to_frame("Daily Orders")
     total = int(daily["Daily Orders"].sum())
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
@@ -153,7 +166,14 @@ elif mode == "SUNO Segments":
     label = st.sidebar.selectbox("انتخاب SUNO Segment", options=list(suno_map.keys()))
     idx = suno_map[label]
     size = st.sidebar.number_input("Seg Size", min_value=1, value=1000, step=100)
-    cr_pct = st.sidebar.slider("Seg CR", 0.0, 100.0, 5.0, 0.5, format="%.1f%%")
+    cr_pct = st.sidebar.number_input(
+        "Seg CR (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=0.1,
+        format="%.1f"
+    )
     daily = (suno_day5[idx] / 100 * size * (cr_pct / 100)).round(2).to_frame("Daily Orders")
     total = int(daily["Daily Orders"].sum())
     st.markdown(f"#### {label} (Day 5) — Total Orders: {total}")
@@ -163,12 +183,11 @@ elif mode == "SUNO Segments":
 # Custom Mix
 else:
     st.subheader("🧩 Custom Mix Daily Orders")
-    count = st.sidebar.number_input("How many segment entries?", min_value=1, value=1, step=1)
+    count = st.sidebar.number_input="How many segment entries?", min_value=1, value=1, step=1)
     total_df = pd.Series(0.0, index=range(1,8), name="Total Orders")
     for i in range(count):
         st.sidebar.markdown(f"--- Entry #{i+1} ---")
         seg_type = st.sidebar.selectbox(f"Type #{i+1}", ["NLI","Churn","SUNO"], key=f"type_{i}")
-        # per-entry send/reminder
         if seg_type == "NLI":
             send = st.sidebar.radio(f"Send Time #{i+1}", ["Noon","Night"], key=f"send_nli_{i}")
             if send == "Noon":
@@ -176,7 +195,6 @@ else:
                 shares = nli_day4 if rem=="Day 4" else nli_day5
             else:
                 shares = nli_night_day4
-                rem = "Night"
             mapping = nli_map
         elif seg_type == "Churn":
             send = st.sidebar.radio(f"Send Time #{i+1}", ["Noon","Night"], key=f"send_ch_{i}")
@@ -185,17 +203,21 @@ else:
                 shares = churn_day4 if rem=="Day 4" else churn_day5
             else:
                 shares = churn_night_day4
-                rem = "Night"
             mapping = churn_map
-        else:  # SUNO
-            send = "Noon"
-            rem = "Day 5"
-            shares = suno_day5
-            mapping = suno_map
+        else:
+            send, rem, shares, mapping = "Noon", "Day 5", suno_day5, suno_map
         label = st.sidebar.selectbox(f"Select {seg_type} Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
         idx = mapping[label]
         sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
-        crp = st.sidebar.slider(f"CR #{i+1}", 0.0, 100.0, 5.0, 0.5, format="%.1f%%", key=f"cr_{i}")
+        crp = st.sidebar.number_input(
+            f"CR #{i+1} (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=5.0,
+            step=0.1,
+            format="%.1f",
+            key=f"cr_{i}"
+        )
         total_df += shares[idx] / 100 * (sz * crp / 100)
     df_mix = total_df.round(2).to_frame()
     st.markdown("#### Custom Mix — Total Daily Orders")
