@@ -318,5 +318,3 @@ else:
         file_name="custom_mix_daily_orders.csv",
         mime="text/csv"
     )
-
-st.caption("Built with ❤️ using Streamlit")
