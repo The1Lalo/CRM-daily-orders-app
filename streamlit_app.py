@@ -136,12 +136,13 @@ if mode == "NLI Segments":
         "Share (%)": percent_series,
         "Daily Orders": daily
     })
+    df_out.index.name = 'Day'
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
     st.markdown(f"##### {label} ({header}) — Total Orders: {total}")
 
-    # نمایش جدول بدون زیرعنوان پررنگ
+    # نمایش جدول
     st.table(df_out)
 
     # دکمهٔ دانلود CSV
@@ -186,6 +187,7 @@ elif mode == "Churn Segments":
         "Share (%)": percent_series,
         "Daily Orders": daily
     })
+    df_out.index.name = 'Day'
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
@@ -226,6 +228,7 @@ elif mode == "SUNO Segments":
         "Share (%)": percent_series,
         "Daily Orders": daily
     })
+    df_out.index.name = 'Day'
 
     total = df_out["Daily Orders"].sum()
     st.markdown(f"##### {label} (Day 5) — Total Orders: {total}")
@@ -306,9 +309,9 @@ else:
         "Share (%)": percent_avg,
         "Daily Orders": total_orders
     })
+    df_mix.index.name = 'Day'
 
     st.markdown("##### Custom Mix — Total Daily Orders")
-
     st.table(df_mix)
 
     csv = df_mix.to_csv(index=True, index_label="Day").encode("utf-8")
