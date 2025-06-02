@@ -94,14 +94,16 @@ suno_map = {
 
 # Page config
 st.set_page_config(page_title="Daily Orders Calculator", layout="wide")
-st.header("🎯 Daily Orders Calculator")
+st.header("Daily Orders Calculator")
 
 # Mode selection
-mode = st.sidebar.radio("Mode", ("NLI Segments", "Churn Segments", "SUNO Segments", "Custom Mix"))
+mode = st.sidebar.radio(
+    "Mode",
+    ("NLI Segments", "Churn Segments", "SUNO Segments", "Custom Mix")
+)
 
 # NLI Segments
 if mode == "NLI Segments":
-    st.subheader("📊 NLI Daily Orders")
     send_nli_time = st.sidebar.radio("Send Time for NLI", ("Noon", "Night"), key="send_nli_time")
     if send_nli_time == "Noon":
         rem_nli = st.sidebar.radio("Reminder Day for NLI", ("Day 4", "Day 5"), key="rem_nli_main")
@@ -123,13 +125,13 @@ if mode == "NLI Segments":
         format="%.1f"
     )
 
-    # 1. درصد سهم سگمنت در هر روز (یک رقم اعشاری)
+    # درصد سهم سگمنت در هر روز (یک رقم اعشاری)
     percent_series = shares[idx].round(1)
 
-    # 2. تعداد سفارش‌های روزانه
+    # تعداد سفارش‌های روزانه
     daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
-    # 3. ساخت DataFrame با ستون‌های "Share (%)" و "Daily Orders"
+    # ساخت DataFrame با ستون‌های "Share (%)" و "Daily Orders"
     df_out = pd.DataFrame({
         "Share (%)": percent_series,
         "Daily Orders": daily
@@ -137,17 +139,10 @@ if mode == "NLI Segments":
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
-    st.markdown(f"#### {label} ({header}) — Total Orders: {total}")
+    st.markdown(f"##### {label} ({header}) — Total Orders: {total}")
 
-    # استایل ستون "Share (%)": یک رقم اعشار و عرض کوچک
-    styled = (
-        df_out.style
-        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
-        .set_properties(subset=["Share (%)"], **{"width": "60px"})
-    )
-
-    # نمایش جدول با استایل
-    st.dataframe(styled, use_container_width=True)
+    # نمایش جدول بدون زیرعنوان پررنگ
+    st.table(df_out)
 
     # دکمهٔ دانلود CSV
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
@@ -160,7 +155,6 @@ if mode == "NLI Segments":
 
 # Churn Segments
 elif mode == "Churn Segments":
-    st.subheader("📊 Churn Daily Orders")
     send_ch_time = st.sidebar.radio("Send Time for Churn", ("Noon", "Night"), key="send_ch_time")
     if send_ch_time == "Noon":
         rem_ch = st.sidebar.radio("Reminder Day for Churn", ("Day 4", "Day 5"), key="rem_ch_main")
@@ -195,14 +189,9 @@ elif mode == "Churn Segments":
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
-    st.markdown(f"#### {label} ({header}) — Total Orders: {total}")
+    st.markdown(f"##### {label} ({header}) — Total Orders: {total}")
 
-    styled = (
-        df_out.style
-        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
-        .set_properties(subset=["Share (%)"], **{"width": "60px"})
-    )
-    st.dataframe(styled, use_container_width=True)
+    st.table(df_out)
 
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
@@ -214,7 +203,6 @@ elif mode == "Churn Segments":
 
 # SUNO Segments
 elif mode == "SUNO Segments":
-    st.subheader("📊 SUNO Daily Orders")
     label = st.sidebar.selectbox("انتخاب SUNO Segment", options=list(suno_map.keys()))
     idx = suno_map[label]
 
@@ -240,14 +228,9 @@ elif mode == "SUNO Segments":
     })
 
     total = df_out["Daily Orders"].sum()
-    st.markdown(f"#### {label} (Day 5) — Total Orders: {total}")
+    st.markdown(f"##### {label} (Day 5) — Total Orders: {total}")
 
-    styled = (
-        df_out.style
-        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
-        .set_properties(subset=["Share (%)"], **{"width": "60px"})
-    )
-    st.dataframe(styled, use_container_width=True)
+    st.table(df_out)
 
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
@@ -259,7 +242,6 @@ elif mode == "SUNO Segments":
 
 # Custom Mix
 else:
-    st.subheader("🧩 Custom Mix Daily Orders")
     count = st.sidebar.number_input("How many segment entries?", min_value=1, value=1, step=1)
 
     # Series صفر برای جمع تعداد سفارش نهایی و جمع درصدها
@@ -325,14 +307,9 @@ else:
         "Daily Orders": total_orders
     })
 
-    st.markdown("#### Custom Mix — Total Daily Orders")
+    st.markdown("##### Custom Mix — Total Daily Orders")
 
-    styled = (
-        df_mix.style
-        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
-        .set_properties(subset=["Share (%)"], **{"width": "60px"})
-    )
-    st.dataframe(styled, use_container_width=True)
+    st.table(df_mix)
 
     csv = df_mix.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
