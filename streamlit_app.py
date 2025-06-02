@@ -125,7 +125,7 @@ if mode == "NLI Segments":
         format="%.1f"
     )
 
-    # درصد سهم سگمنت در هر روز (یک رقم اعشاری)
+    # درصد سهم سگمنت در هر روز (ابتدا گرد به یک رقم اعشاری)
     percent_series = shares[idx].round(1)
 
     # تعداد سفارش‌های روزانه
@@ -137,6 +137,9 @@ if mode == "NLI Segments":
         "Daily Orders": daily
     })
     df_out.index.name = 'Day'
+
+    # تبدیل مقادیر Share (%) به رشته با یک رقم اعشاری
+    df_out["Share (%)"] = df_out["Share (%)"].map(lambda x: f"{x:.1f}")
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
@@ -177,7 +180,7 @@ elif mode == "Churn Segments":
         format="%.1f"
     )
 
-    # درصد سهم هر روز (یک رقم اعشاری)
+    # درصد سهم هر روز (ابتدا گرد به یک رقم اعشاری)
     percent_series = shares[idx].round(1)
 
     # تعداد سفارش روزانه
@@ -188,6 +191,9 @@ elif mode == "Churn Segments":
         "Daily Orders": daily
     })
     df_out.index.name = 'Day'
+
+    # تبدیل مقادیر Share (%) به رشته با یک رقم اعشاری
+    df_out["Share (%)"] = df_out["Share (%)"].map(lambda x: f"{x:.1f}")
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
@@ -218,7 +224,7 @@ elif mode == "SUNO Segments":
         format="%.1f"
     )
 
-    # درصد سهم روزانه (یک رقم اعشاری)
+    # درصد سهم روزانه (ابتدا گرد به یک رقم اعشاری)
     percent_series = suno_day5[idx].round(1)
 
     # تعداد سفارش روزانه
@@ -229,6 +235,9 @@ elif mode == "SUNO Segments":
         "Daily Orders": daily
     })
     df_out.index.name = 'Day'
+
+    # تبدیل مقادیر Share (%) به رشته با یک رقم اعشاری
+    df_out["Share (%)"] = df_out["Share (%)"].map(lambda x: f"{x:.1f}")
 
     total = df_out["Daily Orders"].sum()
     st.markdown(f"##### {label} (Day 5) — Total Orders: {total}")
@@ -298,8 +307,11 @@ else:
         this_daily = (this_percent / 100 * (sz * crp / 100))
         total_orders += this_daily
 
-    # میانگین درصد سگمنت‌های انتخاب شده (یک رقم اعشاری)
+    # میانگین درصد سگمنت‌های انتخاب شده (ابتدا گرد به یک رقم اعشاری)
     percent_avg = (percent_sum / count).round(1)
+
+    # تبدیل مقادیر میانگین درصد به رشته با یک رقم اعشاری
+    percent_avg = percent_avg.map(lambda x: f"{x:.1f}")
 
     # تبدیل تعداد سفارش نهایی به int
     total_orders = total_orders.round(0).astype(int)
