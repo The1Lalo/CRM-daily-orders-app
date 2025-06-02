@@ -70,7 +70,33 @@ suno_day5 = pd.DataFrame({
 }, index=[1,2,3,4,5,6,7])
 suno_day5.index.name = 'Day'
 
-# Label maps
+# --- Vendor segment data (two actions, need to average) ---
+
+# Action 1 percentages for days 1–7 (Noon send)
+vendor_action1 = pd.Series(
+    [33.84353741, 22.27891156,  9.013605442,  7.908163265,
+     8.588435374,  9.523809524,  8.843537415],
+    index=[1,2,3,4,5,6,7]
+)
+
+# Action 2 percentages for days 1–7 (Noon send)
+vendor_action2 = pd.Series(
+    [35.65836299, 20.56939502, 13.23843416, 10.46263345,
+     10.03558719,  7.402135231,  2.633451957],
+    index=[1,2,3,4,5,6,7]
+)
+
+# Compute vendor average percentages for Noon
+vendor_avg_noon = ((vendor_action1 + vendor_action2) / 2).round(1)
+
+# Vendor percentages for Night send (new values)
+vendor_night = pd.Series(
+    [20.57649667, 24.12416851, 15.96452328,
+     13.52549889, 10.33259424,  8.337028825, 7.139689579],
+    index=[1,2,3,4,5,6,7]
+).round(1)
+
+# Label maps for NLI/Churn/SUNO
 nli_map = {
     "nli_1&2Ord 1-14": 1,
     "nli_1&2 ord 15_28": 2,
@@ -96,13 +122,13 @@ suno_map = {
 st.set_page_config(page_title="Daily Orders Calculator", layout="wide")
 st.header("Daily Orders Calculator")
 
-# Mode selection
+# Mode selection (including new "Vendor")
 mode = st.sidebar.radio(
     "Mode",
-    ("NLI Segments", "Churn Segments", "SUNO Segments", "Custom Mix")
+    ("NLI Segments", "Churn Segments", "SUNO Segments", "Vendor", "Custom Mix")
 )
 
-# NLI Segments
+# --- NLI Segments ---
 if mode == "NLI Segments":
     send_nli_time = st.sidebar.radio("Send Time for NLI", ("Noon", "Night"), key="send_nli_time")
     if send_nli_time == "Noon":
@@ -125,21 +151,14 @@ if mode == "NLI Segments":
         format="%.1f"
     )
 
-    # در صورتی که ارسال شب باشد و سگمنت "nli1&2ord 90_sd" انتخاب شده، داده‌های خاص را اعمال می‌کنیم
+    # If Night send & segment is "nli1&2ord 90_sd", use custom NLI-night data
     if send_nli_time == "Night" and label == "nli1&2ord 90_sd":
-        # مقادیر جدید برای روزهای 1 تا 7
-        custom_values = [13.3, 18.1, 13.4, 21.5, 13.6, 11.8, 8.3]
-        percent_series = pd.Series(custom_values, index=range(1, 8))
+        percent_series = pd.Series([13.3, 18.1, 13.4, 21.5, 13.6, 11.8, 8.3], index=[1,2,3,4,5,6,7])
     else:
-        # در غیر این صورت از داده‌های پیش‌فرض استفاده می‌کنیم
         percent_series = shares[idx].round(1)
 
-    # تعداد سفارش‌های روزانه با همان درصد (چه پیش‌فرض، چه سفارشی) محاسبه می‌شود
-    # دقت: چون percent_series ممکن است از DataFrame جدا شده باشد،
-    # به جای shares[idx] از percent_series استفاده می‌کنیم
     daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
-    # ساخت DataFrame با ستون‌های "Share (%)" و "Daily Orders"
     df_out = pd.DataFrame({
         "Share (%)": percent_series.map(lambda x: f"{x:.1f}"),
         "Daily Orders": daily
@@ -149,11 +168,8 @@ if mode == "NLI Segments":
     total = df_out["Daily Orders"].sum()
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
     st.markdown(f"##### {label} ({header}) — Total Orders: {total}")
-
-    # نمایش جدول
     st.table(df_out)
 
-    # دکمهٔ دانلود CSV
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
         "Download table as CSV",
@@ -162,7 +178,7 @@ if mode == "NLI Segments":
         mime="text/csv"
     )
 
-# Churn Segments
+# --- Churn Segments ---
 elif mode == "Churn Segments":
     send_ch_time = st.sidebar.radio("Send Time for Churn", ("Noon", "Night"), key="send_ch_time")
     if send_ch_time == "Noon":
@@ -185,10 +201,7 @@ elif mode == "Churn Segments":
         format="%.1f"
     )
 
-    # درصد سهم هر روز (ابتدا گرد به یک رقم اعشاری)
     percent_series = shares[idx].round(1)
-
-    # تعداد سفارش روزانه
     daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
     df_out = pd.DataFrame({
@@ -200,7 +213,6 @@ elif mode == "Churn Segments":
     total = df_out["Daily Orders"].sum()
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
     st.markdown(f"##### {label} ({header}) — Total Orders: {total}")
-
     st.table(df_out)
 
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
@@ -211,7 +223,7 @@ elif mode == "Churn Segments":
         mime="text/csv"
     )
 
-# SUNO Segments
+# --- SUNO Segments ---
 elif mode == "SUNO Segments":
     label = st.sidebar.selectbox("انتخاب SUNO Segment", options=list(suno_map.keys()))
     idx = suno_map[label]
@@ -226,10 +238,7 @@ elif mode == "SUNO Segments":
         format="%.1f"
     )
 
-    # درصد سهم روزانه (ابتدا گرد به یک رقم اعشاری)
     percent_series = suno_day5[idx].round(1)
-
-    # تعداد سفارش روزانه
     daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
     df_out = pd.DataFrame({
@@ -240,7 +249,6 @@ elif mode == "SUNO Segments":
 
     total = df_out["Daily Orders"].sum()
     st.markdown(f"##### {label} (Day 5) — Total Orders: {total}")
-
     st.table(df_out)
 
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
@@ -251,17 +259,60 @@ elif mode == "SUNO Segments":
         mime="text/csv"
     )
 
-# Custom Mix
+# --- Vendor Segment (no reminders, can send Noon or Night) ---
+elif mode == "Vendor":
+    send_vendor_time = st.sidebar.radio("Send Time for Vendor", ("Noon", "Night"), key="send_vendor_time")
+
+    size = st.sidebar.number_input("Vendor Seg Size", min_value=1, value=1000, step=100)
+    cr_pct = st.sidebar.number_input(
+        "Vendor Seg CR (%)",
+        min_value=0.0,
+        max_value=100.0,
+        value=5.0,
+        step=0.1,
+        format="%.1f"
+    )
+
+    # Choose percent_series based on send time:
+    if send_vendor_time == "Noon":
+        percent_series = vendor_avg_noon.copy()   # previously computed average for Noon
+    else:
+        percent_series = vendor_night.copy()      # new nighttime percentages
+
+    daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
+
+    df_out = pd.DataFrame({
+        "Share (%)": percent_series.map(lambda x: f"{x:.1f}"),
+        "Daily Orders": daily
+    })
+    df_out.index.name = 'Day'
+
+    total = df_out["Daily Orders"].sum()
+    st.markdown(f"##### Vendor ({send_vendor_time}) — Total Orders: {total}")
+    st.table(df_out)
+
+    csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
+    st.download_button(
+        "Download table as CSV",
+        data=csv,
+        file_name=f"vendor_{send_vendor_time}.csv",
+        mime="text/csv"
+    )
+
+# --- Custom Mix (including Vendor) ---
 else:
     count = st.sidebar.number_input("How many segment entries?", min_value=1, value=1, step=1)
 
-    # Series صفر برای جمع تعداد سفارش نهایی و جمع درصدها
     total_orders = pd.Series(0.0, index=range(1, 8), name="Total Orders")
     percent_sum = pd.Series(0.0, index=range(1, 8), name="Percent Sum")
 
     for i in range(count):
         st.sidebar.markdown(f"--- Entry #{i+1} ---")
-        seg_type = st.sidebar.selectbox(f"Type #{i+1}", ["NLI", "Churn", "SUNO"], key=f"type_{i}")
+        seg_type = st.sidebar.selectbox(
+            f"Type #{i+1}",
+            ["NLI", "Churn", "SUNO", "Vendor"],
+            key=f"type_{i}"
+        )
 
         if seg_type == "NLI":
             send = st.sidebar.radio(f"Send Time #{i+1}", ["Noon", "Night"], key=f"send_nli_{i}")
@@ -270,12 +321,17 @@ else:
                 shares = nli_day4 if rem == "Day 4" else nli_day5
             else:
                 shares = nli_night_day4
-            mapping = nli_map
 
-            label = st.sidebar.selectbox(f"Select NLI Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
-            idx = mapping[label]
+            label = st.sidebar.selectbox(
+                f"Select NLI Segment #{i+1}",
+                options=list(nli_map.keys()),
+                key=f"seg_{i}"
+            )
+            idx = nli_map[label]
 
-            sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
+            sz = st.sidebar.number_input(
+                f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}"
+            )
             crp = st.sidebar.number_input(
                 f"CR #{i+1} (%)",
                 min_value=0.0,
@@ -286,9 +342,8 @@ else:
                 key=f"cr_{i}"
             )
 
-            # اگر در حالت NLI شب و سگمنت "nli1&2ord 90_sd" باشد، از مقادیر سفارشی استفاده می‌کنیم
             if send == "Night" and label == "nli1&2ord 90_sd":
-                this_percent = pd.Series([13.3, 18.1, 13.4, 21.5, 13.6, 11.8, 8.3], index=range(1, 8))
+                this_percent = pd.Series([13.3, 18.1, 13.4, 21.5, 13.6, 11.8, 8.3], index=[1,2,3,4,5,6,7])
             else:
                 this_percent = shares[idx].round(1)
 
@@ -299,12 +354,17 @@ else:
                 shares = churn_day4 if rem == "Day 4" else churn_day5
             else:
                 shares = churn_night_day4
-            mapping = churn_map
 
-            label = st.sidebar.selectbox(f"Select Churn Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
-            idx = mapping[label]
+            label = st.sidebar.selectbox(
+                f"Select Churn Segment #{i+1}",
+                options=list(churn_map.keys()),
+                key=f"seg_{i}"
+            )
+            idx = churn_map[label]
 
-            sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=500, step=50, key=f"sz_{i}")
+            sz = st.sidebar.number_input(
+                f"Size #{i+1}", min_value=1, value=500, step=50, key=f"sz_{i}"
+            )
             crp = st.sidebar.number_input(
                 f"CR #{i+1} (%)",
                 min_value=0.0,
@@ -317,13 +377,19 @@ else:
 
             this_percent = shares[idx].round(1)
 
-        else:  # seg_type == "SUNO"
+        elif seg_type == "SUNO":
             send, rem, shares, mapping = "Noon", "Day 5", suno_day5, suno_map
 
-            label = st.sidebar.selectbox(f"Select SUNO Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
-            idx = mapping[label]
+            label = st.sidebar.selectbox(
+                f"Select SUNO Segment #{i+1}",
+                options=list(suno_map.keys()),
+                key=f"seg_{i}"
+            )
+            idx = suno_map[label]
 
-            sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
+            sz = st.sidebar.number_input(
+                f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}"
+            )
             crp = st.sidebar.number_input(
                 f"CR #{i+1} (%)",
                 min_value=0.0,
@@ -336,17 +402,36 @@ else:
 
             this_percent = shares[idx].round(1)
 
-        # جمع درصدها و تعداد سفارش‌ها
+        else:  # seg_type == "Vendor"
+            send_vendor = st.sidebar.radio(f"Send Time #{i+1}", ["Noon", "Night"], key=f"send_vendor_{i}")
+
+            sz = st.sidebar.number_input(
+                f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}"
+            )
+            crp = st.sidebar.number_input(
+                f"CR #{i+1} (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=5.0,
+                step=0.1,
+                format="%.1f",
+                key=f"cr_{i}"
+            )
+
+            # For Vendor in Custom Mix, choose percent series by send time:
+            if send_vendor == "Noon":
+                this_percent = vendor_avg_noon.copy()
+            else:
+                this_percent = vendor_night.copy()
+
+        # Accumulate percent and orders
         percent_sum += this_percent
         total_orders += (this_percent / 100 * (sz * crp / 100))
 
-    # میانگین درصد سگمنت‌های انتخاب شده (ابتدا گرد به یک رقم اعشاری)
+    # Compute average percent across all entries
     percent_avg = (percent_sum / count).round(1).map(lambda x: f"{x:.1f}")
-
-    # تبدیل تعداد سفارش نهایی به int
     total_orders = total_orders.round(0).astype(int)
 
-    # ساخت DataFrame خروجی با ستون "Share (%)" و "Daily Orders"
     df_mix = pd.DataFrame({
         "Share (%)": percent_avg,
         "Daily Orders": total_orders
