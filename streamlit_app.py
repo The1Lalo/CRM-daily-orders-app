@@ -125,21 +125,26 @@ if mode == "NLI Segments":
         format="%.1f"
     )
 
-    # درصد سهم سگمنت در هر روز (ابتدا گرد به یک رقم اعشاری)
-    percent_series = shares[idx].round(1)
+    # در صورتی که ارسال شب باشد و سگمنت "nli1&2ord 90_sd" انتخاب شده، داده‌های خاص را اعمال می‌کنیم
+    if send_nli_time == "Night" and label == "nli1&2ord 90_sd":
+        # مقادیر جدید برای روزهای 1 تا 7
+        custom_values = [13.3, 18.1, 13.4, 21.5, 13.6, 11.8, 8.3]
+        percent_series = pd.Series(custom_values, index=range(1, 8))
+    else:
+        # در غیر این صورت از داده‌های پیش‌فرض استفاده می‌کنیم
+        percent_series = shares[idx].round(1)
 
-    # تعداد سفارش‌های روزانه
-    daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int)
+    # تعداد سفارش‌های روزانه با همان درصد (چه پیش‌فرض، چه سفارشی) محاسبه می‌شود
+    # دقت: چون percent_series ممکن است از DataFrame جدا شده باشد،
+    # به جای shares[idx] از percent_series استفاده می‌کنیم
+    daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
     # ساخت DataFrame با ستون‌های "Share (%)" و "Daily Orders"
     df_out = pd.DataFrame({
-        "Share (%)": percent_series,
+        "Share (%)": percent_series.map(lambda x: f"{x:.1f}"),
         "Daily Orders": daily
     })
     df_out.index.name = 'Day'
-
-    # تبدیل مقادیر Share (%) به رشته با یک رقم اعشاری
-    df_out["Share (%)"] = df_out["Share (%)"].map(lambda x: f"{x:.1f}")
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
@@ -184,16 +189,13 @@ elif mode == "Churn Segments":
     percent_series = shares[idx].round(1)
 
     # تعداد سفارش روزانه
-    daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int)
+    daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
     df_out = pd.DataFrame({
-        "Share (%)": percent_series,
+        "Share (%)": percent_series.map(lambda x: f"{x:.1f}"),
         "Daily Orders": daily
     })
     df_out.index.name = 'Day'
-
-    # تبدیل مقادیر Share (%) به رشته با یک رقم اعشاری
-    df_out["Share (%)"] = df_out["Share (%)"].map(lambda x: f"{x:.1f}")
 
     total = df_out["Daily Orders"].sum()
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
@@ -228,16 +230,13 @@ elif mode == "SUNO Segments":
     percent_series = suno_day5[idx].round(1)
 
     # تعداد سفارش روزانه
-    daily = (suno_day5[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int)
+    daily = (percent_series / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
     df_out = pd.DataFrame({
-        "Share (%)": percent_series,
+        "Share (%)": percent_series.map(lambda x: f"{x:.1f}"),
         "Daily Orders": daily
     })
     df_out.index.name = 'Day'
-
-    # تبدیل مقادیر Share (%) به رشته با یک رقم اعشاری
-    df_out["Share (%)"] = df_out["Share (%)"].map(lambda x: f"{x:.1f}")
 
     total = df_out["Daily Orders"].sum()
     st.markdown(f"##### {label} (Day 5) — Total Orders: {total}")
@@ -273,6 +272,26 @@ else:
                 shares = nli_night_day4
             mapping = nli_map
 
+            label = st.sidebar.selectbox(f"Select NLI Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
+            idx = mapping[label]
+
+            sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
+            crp = st.sidebar.number_input(
+                f"CR #{i+1} (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=5.0,
+                step=0.1,
+                format="%.1f",
+                key=f"cr_{i}"
+            )
+
+            # اگر در حالت NLI شب و سگمنت "nli1&2ord 90_sd" باشد، از مقادیر سفارشی استفاده می‌کنیم
+            if send == "Night" and label == "nli1&2ord 90_sd":
+                this_percent = pd.Series([13.3, 18.1, 13.4, 21.5, 13.6, 11.8, 8.3], index=range(1, 8))
+            else:
+                this_percent = shares[idx].round(1)
+
         elif seg_type == "Churn":
             send = st.sidebar.radio(f"Send Time #{i+1}", ["Noon", "Night"], key=f"send_ch_{i}")
             if send == "Noon":
@@ -282,36 +301,47 @@ else:
                 shares = churn_night_day4
             mapping = churn_map
 
+            label = st.sidebar.selectbox(f"Select Churn Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
+            idx = mapping[label]
+
+            sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=500, step=50, key=f"sz_{i}")
+            crp = st.sidebar.number_input(
+                f"CR #{i+1} (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=2.0,
+                step=0.1,
+                format="%.1f",
+                key=f"cr_{i}"
+            )
+
+            this_percent = shares[idx].round(1)
+
         else:  # seg_type == "SUNO"
             send, rem, shares, mapping = "Noon", "Day 5", suno_day5, suno_map
 
-        label = st.sidebar.selectbox(f"Select {seg_type} Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
-        idx = mapping[label]
+            label = st.sidebar.selectbox(f"Select SUNO Segment #{i+1}", options=list(mapping.keys()), key=f"seg_{i}")
+            idx = mapping[label]
 
-        sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
-        crp = st.sidebar.number_input(
-            f"CR #{i+1} (%)",
-            min_value=0.0,
-            max_value=100.0,
-            value=5.0,
-            step=0.1,
-            format="%.1f",
-            key=f"cr_{i}"
-        )
+            sz = st.sidebar.number_input(f"Size #{i+1}", min_value=1, value=1000, step=100, key=f"sz_{i}")
+            crp = st.sidebar.number_input(
+                f"CR #{i+1} (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=5.0,
+                step=0.1,
+                format="%.1f",
+                key=f"cr_{i}"
+            )
 
-        # سهم درصد این سگمنت در هر روز (به صورت اعشاری)
-        this_percent = shares[idx]
+            this_percent = shares[idx].round(1)
+
+        # جمع درصدها و تعداد سفارش‌ها
         percent_sum += this_percent
-
-        # تعداد سفارش روزانه این سگمنت
-        this_daily = (this_percent / 100 * (sz * crp / 100))
-        total_orders += this_daily
+        total_orders += (this_percent / 100 * (sz * crp / 100))
 
     # میانگین درصد سگمنت‌های انتخاب شده (ابتدا گرد به یک رقم اعشاری)
-    percent_avg = (percent_sum / count).round(1)
-
-    # تبدیل مقادیر میانگین درصد به رشته با یک رقم اعشاری
-    percent_avg = percent_avg.map(lambda x: f"{x:.1f}")
+    percent_avg = (percent_sum / count).round(1).map(lambda x: f"{x:.1f}")
 
     # تبدیل تعداد سفارش نهایی به int
     total_orders = total_orders.round(0).astype(int)
