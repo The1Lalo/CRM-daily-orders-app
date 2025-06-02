@@ -123,13 +123,13 @@ if mode == "NLI Segments":
         format="%.1f"
     )
 
-    # 1. درصد سهم سگمنت در هر روز (یک رقم اعشار)
+    # 1. درصد سهم سگمنت در هر روز (یک رقم اعشاری)
     percent_series = shares[idx].round(1)
 
     # 2. تعداد سفارش‌های روزانه
     daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
-    # 3. ساخت DataFrame با دو ستون؛ ستون اول "Share (%)"، ستون دوم "Daily Orders"
+    # 3. ساخت DataFrame با ستون‌های "Share (%)" و "Daily Orders"
     df_out = pd.DataFrame({
         "Share (%)": percent_series,
         "Daily Orders": daily
@@ -139,10 +139,17 @@ if mode == "NLI Segments":
     header = f"{send_nli_time}" + (f" {rem_nli}" if send_nli_time == "Noon" else "")
     st.markdown(f"#### {label} ({header}) — Total Orders: {total}")
 
-    # نمایش جدول نهایی
-    st.table(df_out)
+    # استایل ستون "Share (%)": یک رقم اعشار و عرض کوچک
+    styled = (
+        df_out.style
+        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
+        .set_properties(subset=["Share (%)"], **{"width": "60px"})
+    )
 
-    # دکمه دانلود CSV
+    # نمایش جدول با استایل
+    st.dataframe(styled, use_container_width=True)
+
+    # دکمهٔ دانلود CSV
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
         "Download table as CSV",
@@ -175,13 +182,12 @@ elif mode == "Churn Segments":
         format="%.1f"
     )
 
-    # درصد سهم هر روز (یک رقم اعشار)
+    # درصد سهم هر روز (یک رقم اعشاری)
     percent_series = shares[idx].round(1)
 
     # تعداد سفارش روزانه
     daily = (shares[idx] / 100 * size * (cr_pct / 100)).round(0).astype(int)
 
-    # ساخت DataFrame با ستون‌های "Share (%)" و "Daily Orders"
     df_out = pd.DataFrame({
         "Share (%)": percent_series,
         "Daily Orders": daily
@@ -191,7 +197,12 @@ elif mode == "Churn Segments":
     header = f"{send_ch_time}" + (f" {rem_ch}" if send_ch_time == "Noon" else "")
     st.markdown(f"#### {label} ({header}) — Total Orders: {total}")
 
-    st.table(df_out)
+    styled = (
+        df_out.style
+        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
+        .set_properties(subset=["Share (%)"], **{"width": "60px"})
+    )
+    st.dataframe(styled, use_container_width=True)
 
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
@@ -217,7 +228,7 @@ elif mode == "SUNO Segments":
         format="%.1f"
     )
 
-    # درصد سهم روزانه (یک رقم اعشار)
+    # درصد سهم روزانه (یک رقم اعشاری)
     percent_series = suno_day5[idx].round(1)
 
     # تعداد سفارش روزانه
@@ -230,7 +241,13 @@ elif mode == "SUNO Segments":
 
     total = df_out["Daily Orders"].sum()
     st.markdown(f"#### {label} (Day 5) — Total Orders: {total}")
-    st.table(df_out)
+
+    styled = (
+        df_out.style
+        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
+        .set_properties(subset=["Share (%)"], **{"width": "60px"})
+    )
+    st.dataframe(styled, use_container_width=True)
 
     csv = df_out.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
@@ -288,7 +305,7 @@ else:
             key=f"cr_{i}"
         )
 
-        # سهم درصد این سگمنت در هر روز
+        # سهم درصد این سگمنت در هر روز (به صورت اعشاری)
         this_percent = shares[idx]
         percent_sum += this_percent
 
@@ -296,7 +313,7 @@ else:
         this_daily = (this_percent / 100 * (sz * crp / 100))
         total_orders += this_daily
 
-    # میانگین درصد سگمنت‌های انتخاب شده (یک رقم اعشار)
+    # میانگین درصد سگمنت‌های انتخاب شده (یک رقم اعشاری)
     percent_avg = (percent_sum / count).round(1)
 
     # تبدیل تعداد سفارش نهایی به int
@@ -309,7 +326,13 @@ else:
     })
 
     st.markdown("#### Custom Mix — Total Daily Orders")
-    st.table(df_mix)
+
+    styled = (
+        df_mix.style
+        .format({"Share (%)": "{:.1f}", "Daily Orders": "{:d}"})
+        .set_properties(subset=["Share (%)"], **{"width": "60px"})
+    )
+    st.dataframe(styled, use_container_width=True)
 
     csv = df_mix.to_csv(index=True, index_label="Day").encode("utf-8")
     st.download_button(
